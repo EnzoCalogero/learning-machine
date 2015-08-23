@@ -1,0 +1,95 @@
+---
+title: "Practical Machine Learning Course Project Report"
+author: "Enzo"
+output: html_document
+---
+The Current report, describes the steps involved in the creation of a learning machine to predict the activity from devices such as Jawbone Up, Nike FuelBand, and Fitbit.
+The Current report shows the steps required to define the model: getting the data, partition the data (in training and testing), perform the first model using a simple Decision Tree, and then a more sophisticate model the Random Forest.
+
+
+## 1 Getting and Loading in Memory the Data Set
+The data set was provided in the training.csv file. 
+It was defined the working directory for all the file for this report.
+Then the data set was load into the memory, ready to be analysed. 
+
+```{r}
+setwd("C:/Users/cv/Desktop/learningmachines/")
+Data<-read.csv("training.csv")
+```
+
+## 2 Partition the DataSet
+The Data Set was divided into two different sets, one for the model training 60% and one for the testing 40%.
+ 
+```{r}
+library(caret)
+index<-createDataPartition(y=Data$classe, p=0.6, list=FALSE)
+Training<-Data[index,]
+Testing<-Data[-index,]
+```
+
+## 3 Cleaning the dataSet
+The data set has 160 variables, but many of them are not relevant for the model. 
+Analyzing the variables, have been identified the variables:
+with nearly no variance 
+those full of NA for most of the observations.
+and the ones with no formal meaning for the model (like X, timestamp, user,...)  
+And all those variables have been removed from the training and testing sets.
+
+Removing the no-variance variables:
+```{r}
+index2<-nearZeroVar(Training)
+```
+
+Removing the variables that are no formal meaning for the model and have most of the observations with No valid values (NA): 
+```{r}
+index2<-c(index2,grep("kurtosis",names(Training)),grep("kewness",names(Training)),grep("X",names(Training)),grep("max",names(Training)),grep("min",names(Training)),grep("avg",names(Training)),grep("var",names(Training)),grep("amplitude",names(Training)),grep("stddev",names(Training)),grep("timestamp",names(Training)),grep("window",names(Training)),grep("user",names(Training)))
+
+New_Traing<-Training[,-index2]
+New_Testing_Data<-Testing[,-index2]
+```
+
+## 4 The First Algorithms for Prediction: Decision Tree
+
+The first model is the **Decision Tree**, trained using the training set, 
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+mod1<-rpart(classe ~ ., data=New_Traing, method="class")
+```
+
+The following is the graph showing the classification tree output of the algorithm. 
+
+```{r}
+fancyRpartPlot(mod1)
+```
+
+The following is the **Confusion Matrix** of the model.
+As can be seen the accuracy is far away from the 100%, 
+and the classification is not very precise. 
+
+```{r}
+pred1<-predict(mod1,New_Testing_Data,type="class")
+confusionMatrix(pred1, New_Testing_Data$classe)
+```
+
+## 5 The Second Algorithms for Prediction: Random Forest
+
+The second model is the **Random Forest**, trained as before using the training set, 
+
+```{r}
+library(randomForest)
+mod2<-randomForest(classe ~ ., data=New_Traing, method="class")
+```
+The following is the **Confusion Matrix** of the model.
+As can be seen the accuracy is nearly to the 100%,
+and the classification is very precise. 
+
+```{r}
+pred2<-predict(mod2,New_Testing_Data,type="class")
+confusionMatrix(pred2, New_Testing_Data$classe)
+```
+
+This model was able to identified all the 20 classification required for the second part of the project.
